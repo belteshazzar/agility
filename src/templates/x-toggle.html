@@ -1,0 +1,95 @@
+<template bg="red" name="toggle">
+
+  <style>
+    :host {
+      --toggle-bg: black;
+    }
+
+    .toggle {
+      position: relative;
+      display: inline-block;
+    }
+
+    .toggle-input {
+      display: none;
+    }
+
+    .toggle-label {
+      display: block;
+      width: 48px;
+      height: 24px;
+      text-indent: -150%;
+      clip: rect(0 0 0 0);
+      color: transparent;
+      user-select: none;
+    }
+
+    .toggle-label::before,
+    .toggle-label::after {
+      content: "";
+      display: block;
+      position: absolute;
+      cursor: pointer;
+    }
+
+    .toggle-label::before {
+      width: 100%;
+      height: 100%;
+      background-color: #dedede;
+      border-radius: 9999em;
+      -webkit-transition: background-color 0.25s ease;
+      transition: background-color 0.25s ease;
+    }
+
+    .toggle-label::after {
+      top: 0;
+      left: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background-color: #fff;
+      box-shadow: 0 0 2px rgba(0, 0, 0, 0.45);
+      -webkit-transition: left 0.25s ease;
+      transition: left 0.25s ease;
+    }
+
+    .toggle-input:checked+.toggle-label::before {
+      background-color: var(--toggle-bg);
+    }
+
+    .toggle-input:checked+.toggle-label::after {
+      left: 24px;
+    }
+  </style>
+  <script type="text/javascript">
+
+    this.init = function () {
+      // Initialize the component
+      console.log(this.data.bg)
+      this.style.setProperty('--toggle-bg', this.getAttribute('bg') || 'black');
+
+
+      // this.input = this.shadowRoot.getElementById('toggle-1');
+
+      // let hidden = document.createElement('input')
+      // hidden.type = 'hidden';
+      // hidden.name = this.getAttribute('name') || 'toggle';
+      // hidden.value = this.input.checked;
+      // this._internals.form.appendChild(hidden);
+
+      // this.input.addEventListener('input', () => {
+      //   // does not work in Safari
+      //   // this._internals.setFormValue('fred',this.input.checked);
+
+      //   hidden.value = this.input.checked;
+      // });
+    };
+
+  </script>
+
+  <div class="toggle">
+    <input id="toggle-1" x-attr:name="name" type="checkbox" class="toggle-input" />
+    <label for="toggle-1" class="toggle-label">toggle</label>
+  </div>
+
+</template>

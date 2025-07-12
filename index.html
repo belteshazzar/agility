@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+  </head>
+  <body>
+  <nav>
+    <a href="#home">Home</a>
+    <a href="#about">About</a>
+    <a href="#contact">Contact</a>
+  </nav>
+
+    <div id="draggable">Drag me</div>
+
+  <div id="content">
+    <!-- Dynamic content will go here -->
+  </div>
+
+
+  <div>
+<p>input elements: <span id="input-value"></span></p>
+<hr>
+<input type="button">
+<input type="checkbox">
+<input type="color">
+<input type="date">
+<input type="datetime-local">
+<input type="email">
+<input type="file">
+<input type="hidden">
+<input type="image">
+<input type="month">
+<input type="number">
+<input type="password">
+
+
+<input type="radio" id="html" name="fav_language" value="HTML">
+<label for="html">HTML</label><br>
+<input type="radio" id="css" name="fav_language" value="CSS">
+<label for="css">CSS</label><br>
+<input type="radio" id="javascript" name="fav_language" value="JavaScript">
+<label for="javascript">JavaScript</label>
+
+
+<input type="range">
+<input type="reset">
+<input type="search">
+<input type="submit">
+<input type="tel">
+<input type="text">
+<input type="time">
+<input type="url">
+<input type="week">
+
+</div>
+
+<hr>
+
+<label>
+
+<select id="cars" name="cars">
+  <option value="volvo">Volvo</option>
+  <option value="saab">Saab</option>
+  <option value="fiat">Fiat</option>
+  <option value="audi">Audi</option>
+</select>
+
+<select id="grouped-cars" name="cars">
+  <optgroup label="Swedish Cars">
+    <option value="volvo">Volvo</option>
+    <option value="saab">Saab</option>
+  </optgroup>
+  <optgroup label="German Cars">
+    <option value="mercedes">Mercedes</option>
+    <option value="audi">Audi</option>
+  </optgroup>
+</select>
+
+<textarea id="message" rows="10" cols="30">
+The cat was playing in the garden.
+</textarea>
+
+
+<button type="button">Click Me!</button>
+
+
+  <input id="datalist-input" list="browsers">
+  <datalist id="browsers">
+    <option value="Edge">
+    <option value="Firefox">
+    <option value="Chrome">
+    <option value="Opera">
+    <option value="Safari">
+  </datalist>
+
+<form action="/action_page.php">
+  0
+  <input type="range"  id="a" name="a" value="50">
+  100 +
+  <input type="number" id="b" name="b" value="50">
+  =
+  <output id="x" name="x" for="a b"></output>
+  <br><br>
+  <input type="submit">
+</form>
+
+
+  <x-textarea></x-textarea>
+
+  <form id="myForm">
+    <input type="text" name="username" value="john">
+  <input type="email" name="email" value="john@example.com">
+  <input type="checkbox" name="subscribe" checked>
+  <x-toggle bg="#89c12d"></x-toggle>
+  <button type="submit">Submit</button>
+</form>
+
+<script type="module">
+  const form = document.getElementById('myForm');
+
+form.addEventListener('submit', function (e) {
+  e.preventDefault(); // prevent actual form submission
+
+  const formData = new FormData(form);
+
+  for (let [name, value] of formData.entries()) {
+    console.log(`${name}: ${value}`);
+  }
+});
+</script>
+<x-counter count="5"></x-counter>
+
+    <x-user-card id="user1" name="Alice Smith" email="alice@example.com" profile="https://example.com/alice">
+    <p slot="bio">Alice is a designer who loves minimalist UI.</p>
+    <button slot="actions">Contact Alice</button>
+  </x-user-card>
+
+  <x-user-card id="user2">
+    <!-- Uses default values from template -->
+  </x-user-card>
+
+
+
+    <div id="app"></div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

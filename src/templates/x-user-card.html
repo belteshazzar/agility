@@ -1,0 +1,73 @@
+  <template
+    name="Default Name"
+    email="default@example.com"
+    profile="https://example.com/default">
+    
+    <style>
+      :host {
+        display: block;
+        font-family: sans-serif;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        padding: 1em;
+        margin: 1em 0;
+        max-width: 300px;
+        background: #f9f9f9;
+      }
+
+      .card {
+        padding: 1em;
+        border-radius: 6px;
+        background: white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .name {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .email {
+        font-size: 0.9em;
+        color: #666;
+        margin-bottom: 1em;
+      }
+
+      .default {
+        color: #999;
+        font-style: italic;
+      }
+
+      input {
+        width: 100%;
+        margin-top: 0.5em;
+        padding: 0.4em;
+        font-size: 1em;
+      }
+    </style>
+    <script type="text/javascript">
+
+      this.handleClick = function(ev) {
+        console.log(this)
+        console.log(ev);
+      }
+
+    </script>
+
+    <div class="card">
+      <div class="name" x-text="name"></div>
+      <div class="email" x-html="email"></div>
+      <a x-attr:href="profile" target="_blank">View Profile</a>
+      <input type="text" x-value="name" placeholder="Edit name" />
+      <input type="text" x-value="email" placeholder="Edit email" />
+      <slot name="bio">
+        <p class="default">No bio provided.</p>
+      </slot>
+      <slot name="actions">
+        <p class="default">No actions available.</p>
+      </slot>
+      <button @click="handleClick">Click Me</button>
+      <button @click="console.log(this,event)">Click Me</button>
+    </div>
+  </template>
