@@ -1,4 +1,3 @@
-
 /**
  * ReactiveStore
  * -------------
@@ -46,7 +45,6 @@ const reactiveHandler = {
       if (v === undefined) {
         return () => `Placeholder(${target.path.join('.')})`
       } else if (v[prop]) {
-        console.log(`Using ${String(prop)} for path: ${target.path.join('.')}`);
         return () => v[prop]()
       } else {
         console.warn(`No ${String(prop)} method for path: ${target.path.join('.')}`);
@@ -116,6 +114,11 @@ class ReactiveStore {
     this.currentComputation = null;
     this.computedState = {}; // Stores metadata for computed properties
     this.proxy = new Proxy({ store: this, path: [] }, reactiveHandler);
+
+    // Batching state
+    this._pendingNotifications = new Set();
+    this._isBatchScheduled = false;
+
     return this.proxy;
   }
 
@@ -156,10 +159,40 @@ class ReactiveStore {
   }
 
   _notify(path) {
+
+    console.log(`🔔 Notifying changes for path: ${path.join('.')}`);
+
+    // Batch notifications for this path and all parent paths
     for (let i = path.length; i >= 0; i--) {
       const subKey = path.slice(0, i).join('.');
-      this.listeners.get(subKey)?.forEach(cb => cb(this._get(path), path));
+      this._pendingNotifications.add({ queueForPath: subKey, updatePath: path });
+      console.log(`🔔 Queued notification for queueForPath: ${subKey}, updatePath: ${path.join('.')}`);
     }
+    if (!this._isBatchScheduled) {
+      this._isBatchScheduled = true;
+      Promise.resolve().then(() => this._flushNotifications());
+    }
+  }
+
+  _flushNotifications() {
+    this._isBatchScheduled = false;
+    const notified = new Set();
+    for (const key of this._pendingNotifications) {
+      console.log(`🔔 Processing notification for: ${key.queueForPath} on change path [${key.updatePath}]`);
+      if (this.listeners.has(key.queueForPath)) {
+        const value = this._get(key.updatePath);
+        for (const cb of this.listeners.get(key.queueForPath)) {
+          // Prevent duplicate notifications for the same callback in the same batch
+          const cbKey = key + cb.toString();
+          if (!notified.has(cbKey)) {
+            console.log(`🔔 Notifying callback for: [${key.queueForPath}] with value: ${value}, updatePath: [${key.updatePath}]`);
+            cb(value, key.updatePath);
+            notified.add(cbKey);
+          }
+        }
+      }
+    }
+    this._pendingNotifications.clear();
   }
 
   _defineComputed(path, computeFn) {
