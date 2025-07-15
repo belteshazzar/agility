@@ -75,9 +75,15 @@ const reactiveHandler = {
       return () => target.store._get(target.path);
     }
 
-    // Introspection helpers
-    if (prop === 'meta') {
-      return target.store._getComputedMeta(target.path) ?? null;
+    // Special debug property to print computed tree and state
+    if (prop === 'debug') {
+      return {
+        printComputedTree: () => target.store.printComputedTree(),
+        printState: () => {
+          // Pretty-print the real internal state
+          console.log('ReactiveStore State:', JSON.stringify(target.store.state, null, 2));
+        }
+      };
     }
 
     // Return nested proxy
@@ -111,7 +117,6 @@ class ReactiveStore {
   constructor(initialState = {}) {
     this.state = initialState;
     this.listeners = new Map();
-    this.currentComputation = null;
     this.computedState = {}; // Stores metadata for computed properties
     this.proxy = new Proxy({ store: this, path: [] }, reactiveHandler);
 
@@ -123,9 +128,6 @@ class ReactiveStore {
   }
 
   _get(path) {
-    if (this.currentComputation) {
-      this.currentComputation.add(path.join('.'));
-    }
     return path.reduce((obj, key) => obj?.[key], this.state);
   }
 
@@ -135,6 +137,7 @@ class ReactiveStore {
       obj = obj[path[i]] ??= {};
     }
     const oldValue = obj[path.at(-1)];
+
     if (oldValue !== value) {
       obj[path.at(-1)] = value;
       this._notify(path);
@@ -160,13 +163,10 @@ class ReactiveStore {
 
   _notify(path) {
 
-    console.log(`🔔 Notifying changes for path: ${path.join('.')}`);
-
     // Batch notifications for this path and all parent paths
     for (let i = path.length; i >= 0; i--) {
       const subKey = path.slice(0, i).join('.');
       this._pendingNotifications.add({ queueForPath: subKey, updatePath: path });
-      console.log(`🔔 Queued notification for queueForPath: ${subKey}, updatePath: ${path.join('.')}`);
     }
     if (!this._isBatchScheduled) {
       this._isBatchScheduled = true;
@@ -178,14 +178,12 @@ class ReactiveStore {
     this._isBatchScheduled = false;
     const notified = new Set();
     for (const key of this._pendingNotifications) {
-      console.log(`🔔 Processing notification for: ${key.queueForPath} on change path [${key.updatePath}]`);
       if (this.listeners.has(key.queueForPath)) {
         const value = this._get(key.updatePath);
         for (const cb of this.listeners.get(key.queueForPath)) {
           // Prevent duplicate notifications for the same callback in the same batch
           const cbKey = key + cb.toString();
           if (!notified.has(cbKey)) {
-            console.log(`🔔 Notifying callback for: [${key.queueForPath}] with value: ${value}, updatePath: [${key.updatePath}]`);
             cb(value, key.updatePath);
             notified.add(cbKey);
           }
@@ -198,12 +196,27 @@ class ReactiveStore {
   _defineComputed(path, computeFn) {
     const deps = new Set();
 
-    const compute = () => {
-      this.currentComputation = deps;
-      const value = computeFn(this.proxy);
-      this.currentComputation = null;
+    // Dependency-tracking proxy handler
+    const depHandler = {
+      get: (target, prop, receiver) => {
+        // Forward to the original reactiveHandler for all other logic
+        if (typeof prop === 'symbol' || prop === 'valueOf' || prop === 'toString' || prop === 'toJSON') {
+          // Record dependency path
+          deps.add(target.path.join('.'));
+          return Reflect.get(new Proxy({ store: target.store, path: target.path }, reactiveHandler),prop);
+        } else {
+          return new Proxy({ store: target.store, path: target.path.concat(prop) }, depHandler);
+        }
+      }
+    };
 
+    const processValue = (value,async) => {
       this._set(path, value);
+
+      // Subscribe to dependencies
+      deps.forEach(dep => {
+        this._subscribe(dep.split('.'), () => this._updateComputed(path, computeFn));
+      });
 
       // Store metadata in computedState
       let obj = this.computedState;
@@ -213,47 +226,40 @@ class ReactiveStore {
       obj[path.at(-1)] = {
         computeFn,
         dependencies: Array.from(deps),
-        lastValue: value
+        async: async
       };
-    };
-
-    compute();
-
-    deps.forEach(dep => {
-      this._subscribe(dep.split('.'), compute);
-    });
-  }
-
-  _getComputedMeta(path) {
-    let obj = this.computedState;
-    for (let i = 0; i < path.length; i++) {
-      obj = obj?.[path[i]];
-      if (!obj) return null;
     }
-    return obj?.computeFn ? obj : null;
+
+    // Create a proxy that tracks dependencies
+    const depProxy = new Proxy({ store: this, path: [] }, depHandler);
+
+    let result = computeFn(depProxy);
+
+    // If the result is a promise, handle it asynchronously
+    if (result && typeof result.then === 'function') {
+
+      result.then(value => {
+        processValue(value, true);
+      });
+
+    } else {
+      processValue(result, false);
+    }
+
   }
 
-  inspectComputed() {
-    const results = [];
-
-    const traverse = (node, path = []) => {
-      for (const key in node) {
-        const value = node[key];
-        const currentPath = path.concat(key);
-        if (value && typeof value === 'object' && 'computeFn' in value) {
-          results.push({
-            path: currentPath.join('.'),
-            dependencies: value.dependencies,
-            lastValue: value.lastValue
-          });
-        } else if (typeof value === 'object') {
-          traverse(value, currentPath);
-        }
-      }
-    };
-
-    traverse(this.computedState);
-    return results;
+  _updateComputed(path, computeFn) {
+    let result;
+    let isAsync = false;
+    result = computeFn(this.proxy);
+    if (result && typeof result.then === 'function') {
+      isAsync = true;
+      result.then(value => {
+        this._set(path, value);
+      });
+    } else {
+      this._set(path, result);
+    }
   }
 
   printComputedTree() {
@@ -263,7 +269,7 @@ class ReactiveStore {
         if (value && typeof value === 'object' && 'computeFn' in value) {
           console.log(`${indent}- ${key}`);
           console.log(`${indent}  ↳ deps: [${value.dependencies.join(', ')}]`);
-          console.log(`${indent}  ↳ lastValue: ${JSON.stringify(value.lastValue)}`);
+          console.log(`${indent}  ↳ async: ${value.async}`);
         } else if (typeof value === 'object') {
           console.log(`${indent}${key}:`);
           traverse(value, indent + '  ');
@@ -271,7 +277,7 @@ class ReactiveStore {
       }
     };
 
-    console.log('🧠 Computed Properties Tree:');
+    console.log('Computed Properties Tree:');
     traverse(this.computedState);
   }
 }
