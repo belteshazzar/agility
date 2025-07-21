@@ -6,6 +6,7 @@ import { template } from './lib/template.js'
 import { setupDraggable } from './draggable.js'
 import { setupHistory } from './history.js'
 
+import './templates/x-counter.html';
 import './templates/x-user-card.html';
 import './templates/x-toggle.html';
 

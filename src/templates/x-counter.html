@@ -1,5 +1,5 @@
   <template
-    count="0">
+    count="5">
     
     <style>
       :host {
@@ -23,5 +23,6 @@
     <script type="text/javascript">
     </script>
 
+    <div x-text="count"></div>
     <button @click="this.data.count++" x-text="count">Click Me</button>
   </template>

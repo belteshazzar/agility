@@ -173,33 +173,52 @@ class ReactiveStore {
     let callback = null
 
     if (attrName) {
-    
-      const observer = new MutationObserver(mutations => {
-        mutations.forEach(mutation => {
-          if (mutation.type === 'attributes') {
-            const name = mutation.attributeName;
-            if (name == attrName) {
-              const newValue = htmlElement.getAttribute(name);
-              const oldValue = this._get(path)
-      
-              if (oldValue !== newValue) {
-                this._set(path,newValue)
-              }
+      if (htmlElement instanceof HTMLElement) {
+        if (attrName == 'textContent' || attrName == 'innerHTML') {
+          // console.log(attrName,htmlElement[attrName])
+          //this._set(path,htmlElement[attrName])
+          htmlElement[attrName] = this._get(path)
+          callback = (newValue) => {
+            const oldValue = htmlElement[attrName]
+            if (newValue !== oldValue) {
+              htmlElement[attrName] = newValue
             }
           }
-        });
-      });
-
-      observer.observe(htmlElement, { attributes: true });
-
-      callback = (newValue) => {
-        const oldValue = htmlElement.getAttribute(attrName)
-        if (newValue !== oldValue) {
-          htmlElement.setAttribute(attrName,newValue)
+          this.listeners.get(key).add(callback);
+        } else {
+          //this._set(path,htmlElement.getAttribute(attrName));
+          htmlElement.setAttribute(attrName,this._get(path))
+          const observer = new MutationObserver(mutations => {
+            mutations.forEach(mutation => {
+              if (mutation.type === 'attributes') {
+                const name = mutation.attributeName;
+                if (name == attrName) {
+                  const newValue = htmlElement.getAttribute(name);
+                  const oldValue = this._get(path)
+                  if (oldValue !== newValue) {
+                    this._set(path,newValue)
+                  }
+                }
+              }
+            });
+          });
+          observer.observe(htmlElement, { attributes: true });
+          callback = (newValue) => {
+            const oldValue = htmlElement.getAttribute(attrName)
+            if (newValue !== oldValue) {
+              htmlElement.setAttribute(attrName,newValue)
+            }
+          }
+          this.listeners.get(key).add(callback);
         }
+      } else if (htmlElement instanceof CSSStyleDeclaration) {
+        callback = (newValue) => {
+          htmlElement.setProperty(attrName,newValue)
+        }
+        this.listeners.get(key).add(callback);
+      } else {
+        console.warn('tried to bind attr ' + attrName + ' to unsupported element type:',htmlElement)
       }
-      this.listeners.get(key).add(callback);
-
     } else {
       if (htmlElement instanceof HTMLInputElement) {
         if (htmlElement.type == 'button' || htmlElement.type == 'image' || htmlElement.type == 'reset' || htmlElement.type == 'submit') {
@@ -247,12 +266,10 @@ class ReactiveStore {
         htmlElement.addEventListener('mouseup',(ev) => {
           this._set(path,htmlElement.value ? null : false)
         })
-      } else if (htmlElement instanceof HTMLElement) {
-        this._set(path,htmlElement.innerHTML)
+      } else if (htmlElement instanceof HTMLOutputElement) {
         callback = (v) => htmlElement.innerHTML = `${v}`
         this.listeners.get(key).add(callback);
       } else if (htmlElement instanceof NodeList) {
-
         const valueToElement = new Map()
         let value = null
         for (let el of htmlElement) {
@@ -269,7 +286,7 @@ class ReactiveStore {
         }
         this.listeners.get(key).add(callback);
       } else {
-        console.warn('tried to bind to unsupported input type:',htmlElement)
+        console.warn('tried to bind to unsupported element type:',htmlElement.constructor.name)
       }
     }
     return () => this.listeners.get(key).delete(callback)

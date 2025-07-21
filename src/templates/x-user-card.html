@@ -51,7 +51,7 @@
     <script type="text/javascript">
 
       this.handleClick = function(ev) {
-        console.log(this)
+        console.log(ev)
       }
 
     </script>
@@ -59,7 +59,7 @@
     <div class="card">
       <div class="name" x-text="name"></div>
       <div class="email" x-html="email"></div>
-      <a x-attr:href="profile" target="_blank">View Profile</a>
+      <a x-bind:href="profile" target="_blank">View Profile</a>
       <input type="text" x-value="name" placeholder="Edit name" />
       <input type="text" x-value="email" placeholder="Edit email" />
       <slot name="bio">

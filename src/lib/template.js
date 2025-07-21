@@ -32,11 +32,7 @@ export class TemplatedHTMLElement extends HTMLElement {
     // }
 
 
-    this.bindings = {
-      attr: [],
-      input: [],
-      event: []
-    };
+
 
 
     if (this.onInit) this.onInit(this);
@@ -103,15 +99,22 @@ export class TemplatedHTMLElement extends HTMLElement {
             el.addEventListener(eventType, fn.bind(this))
           }
 
-          this.bindings.event.push({element: el, event: eventType})
+          // this.bindings.event.push({element: el, event: eventType})
         } else if (attr.name.startsWith('x-')) {
-          if (attr.name == 'x-text') this.bindings.attr.push({element: el, attribute: 'textContent', property: attr.value});
-          else if (attr.name == 'x-html') this.bindings.attr.push({element: el, attribute: 'innerHTML', property: attr.value});
-          else if (attr.name == 'x-value') {
+          if (attr.name == 'x-text') {
+            // this.bindings.attr.push({element: el, attribute: 'textContent', property: attr.value});
+            this.data[attr.value].bind(el,'textContent')
+          } else if (attr.name == 'x-html') {
+            // this.bindings.attr.push({element: el, attribute: 'innerHTML', property: attr.value});
+            this.data[attr.value].bind(el,'innerHTML')
+          }else if (attr.name == 'x-value') {
             //this.bindings.input.push({element: el, property: attr.value});
             // console.log('bind: ' + attr.value,el)
             this.data[attr.value].bind(el)
-          } else if (attr.name.startsWith('x-attr:')) this.bindings.attr.push({element: el, attribute: attr.name.substring(7), property: attr.value});
+          } else if (attr.name.startsWith('x-bind:')) {
+            // this.bindings.attr.push({element: el, attribute: attr.name.substring(7), property: attr.value});
+            this.data[attr.value].bind(el,attr.name.substring(7))
+          }
         }
       });
 

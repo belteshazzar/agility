@@ -64,9 +64,7 @@
   <script type="text/javascript">
 
     this.onInit = function () {
-      // Initialize the component
-      console.log('init toggle',this.data.bg)
-      this.style.setProperty('--toggle-bg', this.getAttribute('bg') || 'black');
+      this.data.bg.bind(this.style,'--toggle-bg')
 
 
       // this.input = this.shadowRoot.getElementById('toggle-1');
@@ -88,7 +86,7 @@
   </script>
 
   <div class="toggle">
-    <input id="toggle-1" x-attr:name="name" type="checkbox" class="toggle-input" />
+    <input id="toggle-1" x-bind:name="name" type="checkbox" class="toggle-input" />
     <label for="toggle-1" class="toggle-label">toggle</label>
   </div>
 

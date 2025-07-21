@@ -1,6 +1,6 @@
 
 
-import { readFileSync, writeFileSync } from 'fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs';
 import { extname, basename, dirname, join } from 'path';
 import { parse } from 'node-html-parser';
 
@@ -24,6 +24,7 @@ function htmlToJsPlugin(folder = 'src/templates') {
   return {
     name: 'vite-plugin-html-to-js',
     enforce: 'pre',
+    options(o) { console.log(o); },
     load(id) {
       if (id.startsWith('\0')) return;
       if (id.includes(folder) && extname(id) === '.html') {
@@ -103,7 +104,8 @@ import { template, TemplatedHTMLElement } from '../lib/template.js'
 })();`;
 
         // Write to a .js file with the same name
-        const jsFile = join(dirname(id), basename(id, '.html') + '.js');
+        const jsFile = join('./dist/templates', basename(id, '.html') + '.js');
+        if (!existsSync('./dist/templates')) mkdirSync('./dist/templates', { recursive: true })
         writeFileSync(jsFile, jsCode, 'utf-8');
 
         return jsCode;
