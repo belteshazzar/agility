@@ -63,9 +63,9 @@
   </style>
   <script type="text/javascript">
 
-    this.init = function () {
+    this.onInit = function () {
       // Initialize the component
-      console.log(this.data.bg)
+      console.log('init toggle',this.data.bg)
       this.style.setProperty('--toggle-bg', this.getAttribute('bg') || 'black');
 
 
@@ -78,7 +78,7 @@
       // this._internals.form.appendChild(hidden);
 
       // this.input.addEventListener('input', () => {
-      //   // does not work in Safari
+      //   // does not work in Safar
       //   // this._internals.setFormValue('fred',this.input.checked);
 
       //   hidden.value = this.input.checked;

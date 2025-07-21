@@ -26,48 +26,7 @@ class Bound {
     this.listeners = []
 
     if (el == null) {
-    } else if (el instanceof HTMLInputElement) {
-      if (el.type == 'button' || el.type == 'image' || el.type == 'reset' || el.type == 'submit') {
-        this.value = false
-        el.addEventListener('mousedown',(ev) => {
-          this._update(el.value || true)
-        })
-        el.addEventListener('mouseup',(ev) => {
-          this._update(el.value ? null : false)
-        })
-        this.updateHandler = (v) => {}
-      } else if (el.type == 'checkbox') {
-        this.value = el.checked
-        el.addEventListener('input',(ev) => {
-          this._update(el.checked)
-        })
-        this.updateHandler = (v) => Bound.submit(() => el.checked = v == true)
-      } else {
-        this.value = el.value
-        el.addEventListener('input',(ev) => {
-          this._update(el.value)
-        })
-        this.updateHandler = (v) => Bound.submit(() => el.value = `${v}`)
-      }
-    } else if (el instanceof HTMLSelectElement || el instanceof HTMLTextAreaElement) {
-      this.value = el.value
-      el.addEventListener('input',(ev) => {
-        this._update(el.value)
-      })
-      this.updatehandler = (v) => Bound.submit(() => el.value = `${v}`)
-    } else if (el instanceof HTMLButtonElement) {
-      this.value = false
-      el.addEventListener('mousedown',(ev) => {
-        this._update(el.value || true)
-      })
-      el.addEventListener('mouseup',(ev) => {
-        this._update(el.value ? null : false)
-      })
-      this.updateHandler = (v) => {}
-    } else if (el instanceof HTMLElement) {
-console.log(el.constructor.name)
-      this.value = el.innerHTML
-      this.updateHandler = (v) => Bound.submit(() => el.innerHTML = `${v}`)
+
     } else if (Array.isArray(el)) {
       this.el = el
       this.value = []

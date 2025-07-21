@@ -47,6 +47,8 @@ export function el(name,attributes,children) {
           }
         } else if (isFunction(value)) {
           element.addEventListener(key,value);
+        } else if (key.startsWith('@')) {
+          element.setAttribute('x-ev-' + key.substring(1),value);
         } else {
           element.setAttribute(key,value);
         }

@@ -6,46 +6,70 @@ import { template } from './lib/template.js'
 import { setupDraggable } from './draggable.js'
 import { setupHistory } from './history.js'
 
-const templates = import.meta.glob('./templates/*.html', { query: '?raw' });
+import './templates/x-user-card.html';
+import './templates/x-toggle.html';
 
-async function loadTemplate(name) {
-  const path = `./templates/${name}.html`;
-  const loader = templates[path];
+import ReactiveStore from './lib/store.js'
 
-  if (loader) {
-    const content = await loader();
-    return content.default; // returns the HTML string
-  } else {
-    throw new Error(`Template "${name}" not found`);
-  }
-}
+const store = new ReactiveStore();
+store.subscribe((value,path) => {
+  console.log('Store updated @ ' + path, value);
+})
 
-// Usage:
-loadTemplate('x-user-card').then(html => {
-  template('x-user-card', html);
-});
-loadTemplate('x-counter').then(html => {
-  template('x-counter', html);
-});
-loadTemplate('x-toggle').then(html => {
-  template('x-toggle', html);
-});
+store.inputs = []
+store.inputs[0].bind(document.querySelector('input[type=range]'))
 
+store.inputs[1].bind(document.querySelector('input[type=button]'))
+store.inputs[2].bind(document.querySelector('input[type=checkbox]'))
+store.inputs[3].bind(document.querySelector('input[type=color]'))
+store.inputs[4].bind(document.querySelector('input[type=date]'))
+store.inputs[5].bind(document.querySelector('input[type=datetime-local]'))
+store.inputs[6].bind(document.querySelector('input[type=email]'))
+store.inputs[7].bind(document.querySelector('input[type=file]'))
+store.inputs[8].bind(document.querySelector('input[type=hidden]'))
+store.inputs[9].bind(document.querySelector('input[type=image]'))
+store.inputs[10].bind(document.querySelector('input[type=month]'))
+store.inputs[11].bind(document.querySelector('input[type=number]'))
+store.inputs[12].bind(document.querySelector('input[type=password]'))
+
+store.inputs[13].bind(document.querySelectorAll('input[name=fav_language]'))
+
+store.inputs[14].bind(document.querySelector('input[type=range]'))
+store.inputs[15].bind(document.querySelector('input[type=reset]'))
+store.inputs[16].bind(document.querySelector('input[type=search]'))
+store.inputs[17].bind(document.querySelector('input[type=submit]'))
+store.inputs[18].bind(document.querySelector('input[type=tel]'))
+store.inputs[19].bind(document.querySelector('input[type=text]'))
+store.inputs[20].bind(document.querySelector('input[type=time]'))
+store.inputs[21].bind(document.querySelector('input[type=url]'))
+store.inputs[22].bind(document.querySelector('input[type=week]'))
+
+store.inputs[23].bind(document.querySelector('#cars')) // select
+store.inputs[24].bind(document.querySelector('#grouped-cars')) // select with optgroups
+store.inputs[25].bind(document.querySelector('#message')) // text area
+store.inputs[26].bind(document.querySelector('button'))
+store.inputs[27].bind(document.querySelector('#datalist-input')) // input from datalist
+
+
+store.a.bind(document.querySelector('#a'))
+store.b.bind(document.querySelector('#b'))
+store.x = (s) => s.a*1 + s.b*1;
+store.x.bind(document.querySelector('#x'))
+
+store.a.bind(document.querySelector('input[type=range]'))
 
     const userCard = document.getElementById("user2");
-    // userCard.setAttribute("name", "Steve Alonso");
-    // userCard.data = {
-    //   name: 'Alice',
-    //   email: 'alice@example.com',
-    //   profile: 'https://example.com/alice'
-    // };
-
     // Example: reactive update
     setTimeout(() => {
       userCard.data.name = 'Alice Cooper';
       userCard.data.email = 'acooper@example.com';
     }, 2000);
 
+    // Example: attribute update
+    setTimeout(() => {
+      userCard.setAttribute('name','Bethany Attribute');
+      userCard.setAttribute('email','battribute@example.com');
+    }, 4000);
 
 setupHistory('content', {
   home: '<h2>Home Page</h2><p>Welcome to the home page.</p>',
@@ -66,23 +90,3 @@ document.querySelector('#app').innerHTML = `
     </p>
   </div>
 `
-
-bind('#input-value').to('input','#cars','#grouped-cars','#message','button')
-
-//bind('output').to( ([a,b]) => parseInt(a) + parseInt(b) ).to('#a','#b')
-bind('output').to( ({a,b}) => parseInt(a) + parseInt(b) ).to({ a: '#a', b: '#b' })
-
-bind(document.querySelectorAll('input[type=range]')[0]).to(document.querySelectorAll('input[type=range]')[1])
-
-var observer = new MutationObserver((mutations) => {
-  mutations.forEach((mutation) => {
-    console.log(mutation)
-  })
-});      
-
-
-let r = document.querySelector('input[type=range]')
-console.log(r)
-observer.observe(r,{attributes:true})
-r.setAttribute('value',10)
-

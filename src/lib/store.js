@@ -75,13 +75,18 @@ const reactiveHandler = {
       return () => target.store._get(target.path);
     }
 
+    if (prop === 'bind') {
+      return (htmlElement, attrName) => target.store._bind(target.path, htmlElement, attrName);
+    }
+
     // Special debug property to print computed tree and state
     if (prop === 'debug') {
       return {
-        printComputedTree: () => target.store.printComputedTree(),
+        printComputedTree: () => target.store._printComputedTree(),
         printState: () => {
           // Pretty-print the real internal state
-          console.log('ReactiveStore State:', JSON.stringify(target.store.state, null, 2));
+          // console.log('ReactiveStore State:', JSON.stringify(target.store.state, null, 2));
+          console.log(target.store.state);
         }
       };
     }
@@ -161,8 +166,116 @@ class ReactiveStore {
     return () => this.listeners.get(key).delete(callback);
   }
 
-  _notify(path) {
+  _bind(path, htmlElement, attrName) {
 
+    const key = path.join('.');
+    if (!this.listeners.has(key)) this.listeners.set(key, new Set());
+    let callback = null
+
+    if (attrName) {
+    
+      const observer = new MutationObserver(mutations => {
+        mutations.forEach(mutation => {
+          if (mutation.type === 'attributes') {
+            const name = mutation.attributeName;
+            if (name == attrName) {
+              const newValue = htmlElement.getAttribute(name);
+              const oldValue = this._get(path)
+      
+              if (oldValue !== newValue) {
+                this._set(path,newValue)
+              }
+            }
+          }
+        });
+      });
+
+      observer.observe(htmlElement, { attributes: true });
+
+      callback = (newValue) => {
+        const oldValue = htmlElement.getAttribute(attrName)
+        if (newValue !== oldValue) {
+          htmlElement.setAttribute(attrName,newValue)
+        }
+      }
+      this.listeners.get(key).add(callback);
+
+    } else {
+      if (htmlElement instanceof HTMLInputElement) {
+        if (htmlElement.type == 'button' || htmlElement.type == 'image' || htmlElement.type == 'reset' || htmlElement.type == 'submit') {
+          this._set(path,htmlElement.value || false)
+          htmlElement.addEventListener('mousedown',() => {
+            this._set(path,htmlElement.value || true)
+          })
+          htmlElement.addEventListener('mouseup',() => {
+            this._set(path,htmlElement.value ? null : false)
+          })
+        } else if (htmlElement.type == 'checkbox') {
+          this._set(path,htmlElement.checked)
+          htmlElement.addEventListener('input',() => {
+            this._set(path,htmlElement.checked)
+          })
+          callback = (v) => htmlElement.checked = v == true
+          this.listeners.get(key).add(callback);
+        } else if (htmlElement.type == 'range' || htmlElement.type == 'number') {
+          this._set(path,htmlElement.value*1)
+          htmlElement.addEventListener('input',(ev) => {
+            this._set(path,htmlElement.value*1)
+          })
+          callback = (v) => htmlElement.value = `${v}`
+          this.listeners.get(key).add(callback);
+        } else {
+          this._set(path,htmlElement.value)
+          htmlElement.addEventListener('input',(ev) => {
+            this._set(path,htmlElement.value)
+          })
+          callback = (v) => htmlElement.value = `${v}`
+          this.listeners.get(key).add(callback);
+        }
+      } else if (htmlElement instanceof HTMLSelectElement || htmlElement instanceof HTMLTextAreaElement) {
+        this._set(path,htmlElement.value)
+        htmlElement.addEventListener('input',(ev) => {
+          this._set(path,htmlElement.value)
+        })
+        callback = (v) => htmlElement.value = `${v}`
+        this.listeners.get(key).add(callback);
+      } else if (htmlElement instanceof HTMLButtonElement) {
+        this._set(path,htmlElement.value || false)
+        htmlElement.addEventListener('mousedown',(ev) => {
+          this._set(path,htmlElement.value || true)
+        })
+        htmlElement.addEventListener('mouseup',(ev) => {
+          this._set(path,htmlElement.value ? null : false)
+        })
+      } else if (htmlElement instanceof HTMLElement) {
+        this._set(path,htmlElement.innerHTML)
+        callback = (v) => htmlElement.innerHTML = `${v}`
+        this.listeners.get(key).add(callback);
+      } else if (htmlElement instanceof NodeList) {
+
+        const valueToElement = new Map()
+        let value = null
+        for (let el of htmlElement) {
+          valueToElement.set(el.value,el)
+          el.addEventListener('input',(ev) => {
+            this._set(path,el.value)
+          })
+          if (el.checked) value = el.value
+        }
+        this._set(path,value)
+
+        callback = (v) => {
+          if (valueToElement.has(v)) valueToElement.get(v).checked = true
+        }
+        this.listeners.get(key).add(callback);
+      } else {
+        console.warn('tried to bind to unsupported input type:',htmlElement)
+      }
+    }
+    return () => this.listeners.get(key).delete(callback)
+  }
+
+  _notify(path) {
     // Batch notifications for this path and all parent paths
     for (let i = path.length; i >= 0; i--) {
       const subKey = path.slice(0, i).join('.');
@@ -176,17 +289,11 @@ class ReactiveStore {
 
   _flushNotifications() {
     this._isBatchScheduled = false;
-    const notified = new Set();
     for (const key of this._pendingNotifications) {
       if (this.listeners.has(key.queueForPath)) {
         const value = this._get(key.updatePath);
         for (const cb of this.listeners.get(key.queueForPath)) {
-          // Prevent duplicate notifications for the same callback in the same batch
-          const cbKey = key + cb.toString();
-          if (!notified.has(cbKey)) {
-            cb(value, key.updatePath);
-            notified.add(cbKey);
-          }
+          cb(value, key.updatePath);
         }
       }
     }
@@ -262,7 +369,7 @@ class ReactiveStore {
     }
   }
 
-  printComputedTree() {
+  _printComputedTree() {
     const traverse = (node, indent = '') => {
       for (const key in node) {
         const value = node[key];

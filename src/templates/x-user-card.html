@@ -1,4 +1,6 @@
-  <template
+
+
+<template
     name="Default Name"
     email="default@example.com"
     profile="https://example.com/default">
@@ -50,7 +52,6 @@
 
       this.handleClick = function(ev) {
         console.log(this)
-        console.log(ev);
       }
 
     </script>
@@ -68,6 +69,5 @@
         <p class="default">No actions available.</p>
       </slot>
       <button @click="handleClick">Click Me</button>
-      <button @click="console.log(this,event)">Click Me</button>
     </div>
   </template>
